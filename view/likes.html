@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ブログリレーテーマジェネレーター</title>
+    <style></style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>ブログリレー テーマジェネレーター</h1>
+      <a href="/">戻る</a>
+      <h2>みんなの「これすき」</h2>
+      <ul>
+        {{range .LIKES}}
+        <li>{{.}}</li>
+        {{end}}
+    </div>
+  </body>
+</html>

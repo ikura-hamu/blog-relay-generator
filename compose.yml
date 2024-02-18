@@ -1,0 +1,41 @@
+services:
+  mariadb:
+    image: mariadb:10.3
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: blog_relay
+    ports:
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - 127.0.0.1:8080:8080
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    restart: always
+    develop:
+      watch:
+        - action: rebuild
+          path: ./
+
+  aminer:
+    image: adminer:latest
+    ports:
+      - 127.0.0.1:8081:8080
+    depends_on:
+      - mariadb
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+
+volumes:
+  db_data:
