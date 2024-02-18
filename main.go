@@ -136,10 +136,12 @@ func postLikeHandler(c echo.Context) error {
 	var req likeRequest
 	c.Bind(&req)
 
-	body, _ := io.ReadAll(c.Request().Body)
-	log.Printf("like request: %s", body)
-
 	_, err := db.Exec("INSERT INTO likes (theme) VALUES (?)", req.Theme)
+	if mysqlErr, ok := err.(*mysql.MySQLError); ok {
+		if mysqlErr.Number == 1062 {
+			return c.NoContent(http.StatusOK)
+		}
+	}
 	if err != nil {
 		log.Printf("failed to insert like: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to insert like")
