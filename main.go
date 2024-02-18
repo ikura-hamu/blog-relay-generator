@@ -41,7 +41,7 @@ func main() {
 		Passwd:               cmp.Or(os.Getenv("NS_MARIADB_PASSWORD"), "root"),
 		Net:                  "tcp",
 		Addr:                 cmp.Or(os.Getenv("NS_MARIADB_HOSTNAME"), "mariadb") + ":3306",
-		DBName:               cmp.Or(os.Getenv("NS_MARIADB_HOSTNAME"), "blog_relay"),
+		DBName:               cmp.Or(os.Getenv("NS_MARIADB_DATABASE"), "blog_relay"),
 		AllowNativePasswords: true,
 		ParseTime:            true,
 		Loc:                  jst,
