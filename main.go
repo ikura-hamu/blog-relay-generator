@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"cmp"
 	"database/sql"
 	"embed"
 	"errors"
@@ -10,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -35,11 +37,11 @@ func main() {
 	}
 
 	conf := mysql.Config{
-		User:                 "root",
-		Passwd:               "root",
+		User:                 cmp.Or(os.Getenv("NS_MARIADB_USER"), "root"),
+		Passwd:               cmp.Or(os.Getenv("NS_MARIADB_PASSWORD"), "root"),
 		Net:                  "tcp",
-		Addr:                 "mariadb:3306",
-		DBName:               "blog_relay",
+		Addr:                 cmp.Or(os.Getenv("NS_MARIADB_HOSTNAME"), "mariadb") + ":3306",
+		DBName:               cmp.Or(os.Getenv("NS_MARIADB_HOSTNAME"), "blog_relay"),
 		AllowNativePasswords: true,
 		ParseTime:            true,
 		Loc:                  jst,
