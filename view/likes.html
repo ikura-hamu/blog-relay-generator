@@ -15,6 +15,12 @@
         {{range .LIKES}}
         <li>{{.}}</li>
         {{end}}
+      </ul>
+      {{ if le 0 .PREV_PAGE }}
+      <a href="/like?page={{ .PREV_PAGE }}">前のページ</a>
+      {{ end }} {{ if .NEXT_EXIST }}
+      <a href="/like?page={{ .NEXT_PAGE }}">次のページ</a>
+      {{ end }} 全{{ .PAGES_COUNT }}ページ
     </div>
   </body>
 </html>

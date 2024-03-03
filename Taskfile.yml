@@ -18,4 +18,4 @@ tasks:
   down:
     aliases:
       - "d"
-    cmd: docker compose down -v
+    cmd: docker compose down {{.CLI_ARGS}}

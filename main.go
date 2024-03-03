@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -68,11 +69,12 @@ func main() {
 		log.Fatalf("failed to parse template: %v", err)
 	}
 	t = &Template{
-		templates: temp,
+		templates: temp.Funcs(template.FuncMap{"add": func(a, b int) int { return a + b }}),
 	}
 
 	e := echo.New()
 	e.Renderer = t
+
 	e.Use(middleware.Recover())
 	e.Use(middleware.Logger())
 
@@ -150,15 +152,36 @@ func postLikeHandler(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+const perPage = 20
+
 func getLikesHandler(c echo.Context) error {
+	pageStr := c.QueryParam("page")
+	page := 0
+	if pageStr == "" {
+		page = 0
+	} else {
+		var err error
+		page, err = strconv.Atoi(pageStr)
+		if err != nil {
+			log.Printf("failed to parse page: %v", err)
+			return echo.NewHTTPError(http.StatusBadRequest, "failed to parse page")
+		}
+	}
+
 	var likes []string
-	err := db.Select(&likes, "SELECT theme FROM likes")
+	err := db.Select(&likes, "SELECT theme FROM likes ORDER BY id DESC LIMIT ? OFFSET ?", perPage+1, page*perPage)
 	if err != nil {
 		log.Printf("failed to get likes: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get likes")
 	}
 
-	return c.Render(http.StatusOK, "likes.html", map[string]any{"LIKES": likes})
+	return c.Render(http.StatusOK, "likes.html",
+		map[string]any{
+			"LIKES":      likes[:min(perPage, len(likes))],
+			"NEXT_PAGE":  page + 1,
+			"PREV_PAGE":  page - 1,
+			"NEXT_EXIST": len(likes) > perPage,
+		})
 }
 
 type Word struct {
