@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-const POSTS_COUNT = 2000
+var postsCount, _ = strconv.Atoi(cmp.Or(os.Getenv("POSTS_COUNT"), "2100"))
 
 var db *sqlx.DB
 
@@ -175,12 +175,20 @@ func getLikesHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get likes")
 	}
 
+	var allLikesCount int
+	err = db.Get(&allLikesCount, "SELECT count(*) FROM likes")
+	if err != nil {
+		log.Printf("failed to get likes count: %v", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to get likes count")
+	}
+
 	return c.Render(http.StatusOK, "likes.html",
 		map[string]any{
-			"LIKES":      likes[:min(perPage, len(likes))],
-			"NEXT_PAGE":  page + 1,
-			"PREV_PAGE":  page - 1,
-			"NEXT_EXIST": len(likes) > perPage,
+			"LIKES":       likes[:min(perPage, len(likes))],
+			"NEXT_PAGE":   page + 1,
+			"PREV_PAGE":   page - 1,
+			"NEXT_EXIST":  len(likes) > perPage,
+			"PAGES_COUNT": allLikesCount/perPage + 1,
 		})
 }
 
@@ -274,7 +282,7 @@ func initializeData() error {
 		return fmt.Errorf("failed to get previous posts count: %w", err)
 	}
 
-	if prevPostsCount >= POSTS_COUNT {
+	if prevPostsCount >= postsCount {
 		log.Println("already initialized")
 		return nil
 	}
@@ -282,7 +290,7 @@ func initializeData() error {
 	postStart := prevPostsCount + 1
 
 	wg := sync.WaitGroup{}
-	for i := postStart; i <= POSTS_COUNT; i++ {
+	for i := postStart; i <= postsCount; i++ {
 		wg.Add(1)
 		i := i
 		go func() {
@@ -298,13 +306,13 @@ func initializeData() error {
 
 	wg.Wait()
 
-	words := make([]Word, 0, 5*POSTS_COUNT)
+	words := make([]Word, 0, 5*postsCount)
 	wordsSyncMap.Range(func(key, value interface{}) bool {
 		words = append(words, *(value.(*Word)))
 		return true
 	})
 
-	wordTypes := make([][]feature, 0, POSTS_COUNT)
+	wordTypes := make([][]feature, 0, postsCount)
 	featuresSyncMap.Range(func(key, value interface{}) bool {
 		wordTypes = append(wordTypes, value.([]feature))
 		return true
@@ -337,7 +345,7 @@ func initializeData() error {
 		return fmt.Errorf("failed to insert sentences: %w", err)
 	}
 
-	_, err = db.Exec("INSERT INTO posts_count (count) VALUES (?)", POSTS_COUNT)
+	_, err = db.Exec("INSERT INTO posts_count (count) VALUES (?)", postsCount)
 	if err != nil {
 		return fmt.Errorf("failed to insert posts count: %w", err)
 	}
